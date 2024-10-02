@@ -41,14 +41,19 @@ df = df.astype({"Conta":str})
 df.Conta[df.Conta == 'Non-Labor'] =  'Despesas Operacionais'
 
 
-for index, conta in enumerate(df.iloc[:, 0]):
-    if str(conta)[0].isnumeric() == True:
-      print(df.iloc[[index]])
+# for index, conta in enumerate(df.iloc[:, 0]):
+#     if str(conta)[0].isnumeric() == True:
+#       print(df.iloc[[index]])
+
 
 
 
 output="result.xlsx"
 df.to_excel('result.xlsx', header=True, sheet_name='Opex', index=False)
+
+
+
+
 
 
 os.popen(output)
