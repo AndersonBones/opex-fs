@@ -64,7 +64,8 @@ def adjust_column():
 def insert_row():
     for index, cell in enumerate(ws["A4:A80"]):
         if cell[0].value is not None:
-            print(index)
+            if cell[0].value[0].isalpha() == True:
+                ws.insert_rows(index+5, 1)
 
 
 adjust_column()
