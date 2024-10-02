@@ -5,7 +5,6 @@ import os
 
 
 file_path = "result.xlsx"
-
 wb = load_workbook(file_path)
 
 # grab the active worksheet
@@ -33,9 +32,11 @@ def number_format():
 
 
 
-def despesas_operacionais():
-    for cell in ws["A4:Q4"][0]:
+def set_subtotais():
+    for cell in ws["A4:Q"][0]:
+
         cell.fill = PatternFill("solid", fgColor="1A7753")
+        
         cell.font = Font(name='Montserrat',
                 size=10,
                 bold=True,
@@ -44,6 +45,10 @@ def despesas_operacionais():
                 underline='none',
                 strike=False,
                 color='ffffff')
+        
+
+        
+
 
 
 def adjust_column():
@@ -61,23 +66,38 @@ def adjust_column():
         ws.column_dimensions[column_letter].width = adjusted_width
 
 
-def insert_row():
-    for index, cell in enumerate(ws["A4:A80"]):
+
+def get_subtotal_rows():
+    rows = []
+    for index, cell in enumerate(ws["A5:A80"]):
+        index_account = index+5
+        idx = index_account+1
         if cell[0].value is not None:
             if cell[0].value[0].isalpha() == True:
-                ws.insert_rows(index+5, 1)
+                rows.append(index_account)
 
+    return rows
+
+
+def insert_row():
+    rows = get_subtotal_rows()
+    for index, row in enumerate(rows):
+        ws.insert_rows(rows[index]+len(rows)-len(rows)+index, amount=1)
+
+
+insert_row()
 
 adjust_column()
 set_font()
 number_format()
-despesas_operacionais()
+set_subtotais()
 
-insert_row()
 
 def set_datetime_header():
     ws["C3"].style = NamedStyle(name='datetime', number_format='mmm-yy')
 
 wb.save(file_path)
+
+
 
 
