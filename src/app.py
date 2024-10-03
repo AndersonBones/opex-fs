@@ -3,7 +3,7 @@ from IPython.display import display, HTML
 import numpy as np
 
 
-path = r"C:\Users\anderson.bones\Desktop\Projetos\Python\opex-fs\src\data\M_OPEX.xlsx"
+path = r"C:\Users\Anderson\Desktop\OPEX\opex-fs\src\data\M_OPEX.xlsx"
 df = pd.read_excel(path, decimal=',', sheet_name="M_OPEX", index_col=False, )
 import os
 
