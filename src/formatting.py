@@ -8,6 +8,8 @@ import datetime
 file_path = "result.xlsx"
 wb = load_workbook(file_path)
 
+wb.create_sheet("Relatório")
+
 # grab the active worksheet
 ws = wb['Opex']
 
@@ -17,8 +19,8 @@ ws = wb['Opex']
 def set_font():
     for row in ws["A1:W100"]:
         for cell in row:
-            cell.font = Font(name='Montserrat',
-                size=8,
+            cell.font = Font(name='Calibri',
+                size=10,
                 bold=False,
                 italic=False,
                 vertAlign=None,
@@ -75,8 +77,8 @@ def set_subtotais():
         
                 cell.fill = PatternFill("solid", fgColor="1A7753")
                                     
-                cell.font = Font(name='Montserrat',
-                                size=9,
+                cell.font = Font(name='Calibri',
+                                size=10,
                                 bold=True,
                                 italic=False,
                                 vertAlign=None,
@@ -103,7 +105,8 @@ set_subtotais()
 
 
 def set_datetime_header():
-    safra_month = [4,5,6,7,8,9,10,11,12,1,2,3]
+    years = []
+    months = [4, 5, 6, 7, 8,9,10, 11, 12, 1, 2, 3]
 
     ws["A2"].value = ""
     ws["A3"].value = ""
@@ -115,23 +118,20 @@ def set_datetime_header():
         ws.merge_cells("C1:C2")
 
 
-    
-    ws["D3"] = datetime.datetime(year, 4, 1)
-    ws["D3"].number_format = "mmm-yy"
+    for cell in ws["D2:O2"][0]:
+        years.append(cell.value)
 
 
+
+    for index, cell in enumerate(ws["D3:O3"][0]):
+        cell.value = datetime.datetime(int(years[index]), months[index], 1)
+        cell.number_format = "mmm-yy"
+
     
-    for index, cell in ws["D2:O3"]:
-        year = 0
-        if index == 0: 
-            year = int(cell.value)
-        
-        if index == 1:
-            cell = datetime.datetime(year, 4, 1)
+
 
 set_datetime_header()
 wb.save(file_path)
 
 
-
-
+os.popen(file_path)
