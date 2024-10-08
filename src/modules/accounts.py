@@ -102,6 +102,7 @@ class Accounts:
 
     def get_total_bgd_fct_by_account(self):
         account_total_label_pattern = re.compile('^[a-zA-Z]')
+        
         account_total = {
             "account_label":[],
             "account_bdg_total":[],

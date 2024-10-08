@@ -22,7 +22,7 @@ def get_budget_dataframe():
 
     df = pd.read_excel(path, sheet_name="budget")
     
-    df['YTD Budget'] = df.iloc[:, 1:current_month_index].sum(axis=1)
+    df['YTD Budget'] = df.iloc[:, 1:current_month_index+1].sum(axis=1)
 
   
     return df

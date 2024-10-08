@@ -1,6 +1,8 @@
 from openpyxl import load_workbook
 from openpyxl.styles import numbers
 from openpyxl.styles import Border, Side, PatternFill, Font, GradientFill, Alignment, NamedStyle, alignment
+from openpyxl.chart import BarChart, Series, Reference
+
 import os
 import datetime
 
@@ -14,12 +16,11 @@ class Formatting:
 
 
         self.wb = load_workbook(output)
-        self.wb.create_sheet("Acompanhamento OPEX")
-        self.wb.create_sheet("Base")
+        
 
         # grab the active worksheet
         self.ws = self.wb['Opex']
-
+        self.ws_relatorio = self.wb['Relatório']
 
 
 
@@ -223,6 +224,5 @@ class Formatting:
         self.set_header_style()
         self.set_subtotais_style()
         self.number_format_style()
-
 
         self.save()
