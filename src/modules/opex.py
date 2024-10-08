@@ -70,7 +70,7 @@ class Opex:
         self.df.insert(17, "Δ YTD", np.nan)
 
 
-    def set_delta_ytd_bugdet(self):
+    def set_delta_ytd_bugdet_subtotal(self):
         accounts = Accounts(self.df)
         account_subtotal = accounts.get_subtotal_bgd_fct_by_account()
         account_id_pattern = re.compile('^[0-9]{8}')
@@ -84,8 +84,6 @@ class Opex:
         ytd_budget = get_budget_dataframe()
 
 
-
-
         for index, item in enumerate(self.df['Conta'].str.extract(pat='(^[0-9]{8})').values):
             for account_index, account in enumerate(ytd_budget['Account']):
                 
@@ -93,50 +91,78 @@ class Opex:
                     self.df.iat[index, 15] = ytd_budget.iat[account_index, 14]
         
 
-    
+    def split_df_by_account(self):
+        dfs = []
+        accounts = Accounts(self.df)
+        account_total = accounts.get_total_bgd_fct_by_account()
 
-        #self.df.loc[self.df['Conta'].astype(str).str.extract(pat='(^[0-9]{8})') == ytd_budget['Account'].astype(str), 'Δ YTD Budget'] = 'ss'
+        account_label = account_total['account_label']
+        index_list = []
 
-        # for index, item in enumerate(ytd_budget['Account']):
+        for account in account_label:
+          
+            index_list.append(self.df.loc[self.df['Conta'] == account, 'Conta'].index[0])
 
-        #     ytd_budget_value = ytd_budget.loc[ytd_budget['Account'] == item, 'YTD Budget'].tolist()
+            
+            print(self.df.loc[self.df['Conta'] == account, 'Conta']) # dividir em varios dataframes se baseando no indice dos totais
+                                                                     # apos isso, obter apenas a coluna do budget acumulado, e por fim somar os valores
+        
+        
+        
+
+
+    def set_delta_ytd_bugdet_total(self):
+        account_label_pattern = re.compile('^[a-zA-Z]{5,90}')
+
+        self.df.loc[self.df['Conta'].str.contains(pat=account_label_pattern, regex=True) == True, 'Δ YTD Budget']
+
+        
+
+    def set_delta_ytd_budget2(self):
+       
+        accounts = Accounts(self.df)
+        account_subtotal = accounts.get_subtotal_bgd_fct_by_account()
+        account_id_pattern = re.compile('^[0-9]{8}')
+        account_total_label_pattern = re.compile('^[a-zA-Z]')
+
+        account_total = accounts.get_total_bgd_fct_by_account()
+
+        first_month_index_safra = 4
+        current_month_index = datetime.date.today().month - first_month_index_safra
+        ytd_budget = get_budget_dataframe()
+
+
+        self.df.loc[self.df['Conta'].astype(str).str.extract(pat='(^[0-9]{8})') == ytd_budget['Account'].astype(str), 'Δ YTD Budget'] = 'ss'
+
+        for index, item in enumerate(ytd_budget['Account']):
+
+            ytd_budget_value = ytd_budget.loc[ytd_budget['Account'] == item, 'YTD Budget'].tolist()
 
            
 
-        #     # account = self.df.loc[self.df['Conta'].str.extract(pat='(^[0-9]{8})') == ytd_budget['Account'].astype(str).str.extract(pat='(^[0-9]{8})'), 'Δ YTD Budget']
+            # account = self.df.loc[self.df['Conta'].str.extract(pat='(^[0-9]{8})') == ytd_budget['Account'].astype(str).str.extract(pat='(^[0-9]{8})'), 'Δ YTD Budget']
 
            
-        #     self.df.loc[self.df['Conta'].str.extract(pat='(^[0-9]{8})') == ytd_budget['Account'], 'Δ YTD Budget'] = ytd_budget_value[0] if len(ytd_budget_value) > 0 else 0
+            self.df.loc[self.df['Conta'].str.extract(pat='(^[0-9]{8})') == ytd_budget['Account'], 'Δ YTD Budget'] = ytd_budget_value[0] if len(ytd_budget_value) > 0 else 0
         
 
            
-        # for index, item in enumerate(account_subtotal['account_label']):
-        #      self.df.loc[self.df['Conta'] == item, 'Δ YTD Budget'] = (account_subtotal['account_bdg_total'][index] / 12) * current_month_index
+        for index, item in enumerate(account_subtotal['account_label']):
+             self.df.loc[self.df['Conta'] == item, 'Δ YTD Budget'] = (account_subtotal['account_bdg_total'][index] / 12) * current_month_index
 
-        # for index, item in enumerate(account_total['account_label']):
-        #     self.df.loc[self.df['Conta'] == item, 'Δ YTD Budget'] = (account_total['account_bdg_total'][index] / 12) * current_month_index
+        for index, item in enumerate(account_total['account_label']):
+            self.df.loc[self.df['Conta'] == item, 'Δ YTD Budget'] = (account_total['account_bdg_total'][index] / 12) * current_month_index
 
 
     def set_delta_ytd_fct(self):
-        accounts = Accounts(self.df)
-        account_subtotal = accounts.get_subtotal_bgd_fct_by_account()
-        account_total = accounts.get_total_bgd_fct_by_account()
-
+        account_label_pattern = re.compile('^[0-9]{8} +[a-zA-Z]{5,90}')
 
         first_month_index_safra = 4
         current_month_index = datetime.date.today().month - first_month_index_safra
 
- 
-
-        for index, item in enumerate(account_subtotal['account_label']):
-            self.df.loc[self.df['Conta'] == item, 'Δ YTD real'] = self.df.iloc[3:, 3:current_month_index+3].sum(skipna=True, axis=1)
+        self.df['Δ YTD real'] = self.df.iloc[3:, 3:current_month_index+3].sum(skipna=True, axis=1) # refatorar urgentemente
 
 
-        for index, item in enumerate(account_total['account_label']):
-            
-            self.df.loc[self.df['Conta'] == item, 'Δ YTD real'] = self.df.iloc[3:, 3:current_month_index+3].sum(skipna=True, axis=1)
-
-      
             
     def set_ytd(self):
         self.df['Δ YTD'] = self.df['Δ YTD Budget'] - self.df['Δ YTD real']
@@ -174,9 +200,12 @@ class Opex:
 
         self.insert_ytd_columns()
 
-        self.set_delta_ytd_bugdet()
+        self.set_delta_ytd_bugdet_subtotal()
+        self.set_delta_ytd_bugdet_total()
 
         self.set_delta_ytd_fct()
+
+        self.split_df_by_account()
 
         self.set_ytd()
 

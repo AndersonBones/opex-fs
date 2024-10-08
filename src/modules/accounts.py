@@ -116,8 +116,9 @@ class Accounts:
         return account_total
 
 
-    def get_subtotal_bgd_fct_by_account(self):
-        account_label_pattern = re.compile('^[0-9]{8} +[a-zA-Z]{5,90}')
+    def get_subtotal_bgd_fct_by_account(self): # get subtotal values
+        account_label_pattern = re.compile('^[0-9]{8} +[a-zA-Z]{5,90}') # 
+        account_label_total_pattern = re.compile('^[a-zA-Z]{1,90}')
         account_id_pattern = re.compile('^[0-9]{8}')
         
 

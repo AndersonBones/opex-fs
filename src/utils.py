@@ -14,7 +14,7 @@ def auto_adjust_column(df, writer):
 
 
 def get_budget_dataframe():
-    path = r"C:\Users\Anderson\Desktop\OPEX\opex-fs\src\data\budget.xlsx"
+    path = r"C:\Users\anderson.bones\Desktop\opex-fs\src\data\budget.xlsx"
     pd.options.display.float_format = '{:.2f}'.format
 
     first_month_index_safra = 4

@@ -209,7 +209,7 @@ class Formatting:
     def save(self):
         self.wb.save(filename="Opex.xlsx")
 
-        os.popen("Opex.xlsx")
+        # os.popen("Opex.xlsx")
 
     def run(self):
         self.set_font()
