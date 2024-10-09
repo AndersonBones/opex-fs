@@ -23,32 +23,32 @@ class Opex:
         self.df.drop(index=0, inplace=True)
 
 
-    def rename_column(self):
+    def rename_column(self): #renomeia o nome das colunas
         self.df.rename(columns={"Unnamed: 0": "Totais_label"}, inplace=True)
         self.df.rename(columns={"Version":"Conta"}, inplace=True)
     
-    def set_str_type_column(self):
+    def set_str_type_column(self): # altera o tipo de dados da coluna Conta
         self.df = self.df.astype({"Conta":str})
 
 
-    def remove_column(self, column_name):
+    def remove_column(self, column_name): # remove qualquer: nome da coluna como base
         """
             :column_name: nome da coluna
         """
         self.df= self.df.drop(columns=[column_name])
 
 
-    def delta_fct_bgd(self):
-        self.df['Δ Fct x Bdg'] = self.df['Budget'] - self.df['Forecast']
+    def delta_fct_x_bgd(self): # configura o delta do Budget x Forecast
+        self.df['Δ Fct x Bdg'] = self.df['Budget'] - self.df['Forecast'] # Orçamento x realizado
 
 
-    def remove_null(self):
+    def remove_null_values(self): # remove valores nulos
         self.df.iloc[:, 0].fillna(0)
 
 
 
     def remove_cc_rows(self):
-        # remove cc rows 
+        # remove as linhas dos centros de custo  
         self.df.drop(self.df[(self.df.Totais_label != "Totais") & (self.df.Totais_label.index > 2)].index, inplace=True)
 
 
@@ -56,105 +56,57 @@ class Opex:
         self.df = self.df.iloc[: , 1:] # remove a coluna Cost Center
 
         
-    def set_despesas_opecionais_header(self):
-        # set Despesas Operacionais header
+    def rename_despesas_opecionais_header(self):
+        # renomeia o nome da coluna para Despesas Operacionais
         self.df.Conta[self.df.Conta == 'Non-Labor'] =  'Despesas Operacionais'
 
 
     
 
 
-    def insert_ytd_columns(self):
+    def insert_ytd_columns(self): # insere as colunas YTD referente ao Budget e Forecast 
         self.df.insert(15, "Δ YTD Budget", np.nan)
         self.df.insert(16, "Δ YTD real", np.nan)
         self.df.insert(17, "Δ YTD", np.nan)
 
 
-    def set_delta_ytd_bugdet_subtotal(self):
-        accounts = Accounts(self.df)
-        account_subtotal = accounts.get_subtotal_bgd_fct_by_account()
-        account_id_pattern = re.compile('^[0-9]{8}')
-        account_total_label_pattern = re.compile('^[a-zA-Z]')
+    def set_delta_ytd_bugdet_subtotal(self): # configura o YTD do budget de cada conta 
 
-        account_total = accounts.get_total_bgd_fct_by_account()
+        ytd_budget = get_budget_dataframe() # obtem as contas da base Budget referente a cada conta
 
-        first_month_index_safra = 4
-        current_month_index = datetime.date.today().month - first_month_index_safra
-
-        ytd_budget = get_budget_dataframe()
-
-
-        for index, item in enumerate(self.df['Conta'].str.extract(pat='(^[0-9]{8})').values):
-            for account_index, account in enumerate(ytd_budget['Account']):
-                
-                if item.tolist()[0] == str(account):
-                    self.df.iat[index, 15] = ytd_budget.iat[account_index, 14]
+        for index, item in enumerate(self.df['Conta'].str.extract(pat='(^[0-9]{8})').values): # looping na coluna Conta. retorna o valor e indice das contas
+            for account_index, account in enumerate(ytd_budget['Account']): # looping nas contas da base budget
+                if item.tolist()[0] == str(account): # localiza as contas cadastradas na base budget
+                    self.df.iat[index, 15] = ytd_budget.iat[account_index, 14] # plota o budget acumulado de cada conta localizada na base budget
         
 
-    def split_df_by_account(self):
-        dfs = []
-        accounts = Accounts(self.df)
-        account_total = accounts.get_total_bgd_fct_by_account()
 
-        account_label = account_total['account_label']
+    def set_delta_ytd_bugdet_total(self): #configura o YTD do budget de cada grupo de despesas 
+        accounts = Accounts(self.df)
+        account_total = accounts.get_total_bgd_fct_by_account() # obtem a identificação e os valores do grupo de desepesas 
+
+        account_label = account_total['account_label'] # obtem a identificação do grupo de desepesas
         index_list = []
 
-        for account in account_label:
-          
-            index_list.append(self.df.loc[self.df['Conta'] == account, 'Conta'].index[0])
+        for account in account_label:   
+            index_list.append(self.df.loc[self.df['Conta'] == account, 'Conta'].index[0]) # indices das linhas dos grupos de despesas
 
-            
-            print(self.df.loc[self.df['Conta'] == account, 'Conta']) # dividir em varios dataframes se baseando no indice dos totais
-                                                                     # apos isso, obter apenas a coluna do budget acumulado, e por fim somar os valores
-        
-        
-        
+        index_list = index_list[3:]
+        for index in range(0, len(index_list)-1):
+            # soma os valores entre os intervalos dos indices das linhas do grupo de despesa
+            self.df.iloc[index_list[index]-2, 15] = self.df.iloc[index_list[index]-2:index_list[index+1]-1, 15].sum()
 
 
-    def set_delta_ytd_bugdet_total(self):
-        account_label_pattern = re.compile('^[a-zA-Z]{5,90}')
+        self.df.iloc[index_list[-1]-2, 15] = self.df.iloc[index_list[-1]-2:, 15].sum() #soma os valores entre os intervalos dos indices das linhas do ultimo grupo de despesa
 
-        self.df.loc[self.df['Conta'].str.contains(pat=account_label_pattern, regex=True) == True, 'Δ YTD Budget']
+    # def set_delta_ytd_bugdet_total(self):
+    #     account_label_pattern = re.compile('^[a-zA-Z]{5,90}')
 
-        
+    #     self.df.loc[self.df['Conta'].str.contains(pat=account_label_pattern, regex=True) == True, 'Δ YTD Budget']
 
-    def set_delta_ytd_budget2(self):
-       
-        accounts = Accounts(self.df)
-        account_subtotal = accounts.get_subtotal_bgd_fct_by_account()
-        account_id_pattern = re.compile('^[0-9]{8}')
-        account_total_label_pattern = re.compile('^[a-zA-Z]')
-
-        account_total = accounts.get_total_bgd_fct_by_account()
-
-        first_month_index_safra = 4
-        current_month_index = datetime.date.today().month - first_month_index_safra
-        ytd_budget = get_budget_dataframe()
-
-
-        self.df.loc[self.df['Conta'].astype(str).str.extract(pat='(^[0-9]{8})') == ytd_budget['Account'].astype(str), 'Δ YTD Budget'] = 'ss'
-
-        for index, item in enumerate(ytd_budget['Account']):
-
-            ytd_budget_value = ytd_budget.loc[ytd_budget['Account'] == item, 'YTD Budget'].tolist()
-
-           
-
-            # account = self.df.loc[self.df['Conta'].str.extract(pat='(^[0-9]{8})') == ytd_budget['Account'].astype(str).str.extract(pat='(^[0-9]{8})'), 'Δ YTD Budget']
-
-           
-            self.df.loc[self.df['Conta'].str.extract(pat='(^[0-9]{8})') == ytd_budget['Account'], 'Δ YTD Budget'] = ytd_budget_value[0] if len(ytd_budget_value) > 0 else 0
         
 
-           
-        for index, item in enumerate(account_subtotal['account_label']):
-             self.df.loc[self.df['Conta'] == item, 'Δ YTD Budget'] = (account_subtotal['account_bdg_total'][index] / 12) * current_month_index
-
-        for index, item in enumerate(account_total['account_label']):
-            self.df.loc[self.df['Conta'] == item, 'Δ YTD Budget'] = (account_total['account_bdg_total'][index] / 12) * current_month_index
-
-
-    def set_delta_ytd_fct(self):
+    def set_delta_ytd_fct(self): # configura o forecast acumulado
         account_label_pattern = re.compile('^[0-9]{8} +[a-zA-Z]{5,90}')
 
         first_month_index_safra = 4
@@ -189,14 +141,14 @@ class Opex:
         self.remove_column(column_name="Fct - Previous")
         self.remove_column(column_name='Δ Fct x Fct')
         self.set_str_type_column()
-        self.remove_null()
+ 
         self.remove_cc_rows()
 
         self.remove_cost_center()
 
-        self.set_despesas_opecionais_header()
+        self.rename_despesas_opecionais_header()
 
-        self.delta_fct_bgd()
+        self.delta_fct_x_bgd()
 
         self.insert_ytd_columns()
 
@@ -205,7 +157,7 @@ class Opex:
 
         self.set_delta_ytd_fct()
 
-        self.split_df_by_account()
+
 
         self.set_ytd()
 

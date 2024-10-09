@@ -1,6 +1,6 @@
 import pandas as pd
 import datetime
-
+import os
 
 def auto_adjust_column(df, writer):
 
@@ -14,7 +14,10 @@ def auto_adjust_column(df, writer):
 
 
 def get_budget_dataframe():
-    path = r"C:\Users\anderson.bones\Desktop\opex-fs\src\data\budget.xlsx"
+
+    cwd = os.getcwd()
+    path=os.path.join(cwd, "data", "budget.xlsx")
+
     pd.options.display.float_format = '{:.2f}'.format
 
     first_month_index_safra = 4
