@@ -77,7 +77,7 @@ class Accounts:
         df_category.fillna(0, inplace=True)
 
         df_category['Fct x Bdg'] = df_category['Budget'] - df_category['Forecast']
-        df_category['Percentual'] = (df_category['Forecast'] / df_category['Budget']) * 100 
+        df_category['Percentual'] = (df_category['Forecast'] / df_category['Budget'])
 
         df_category['Percentual'].replace([np.inf, -np.inf], 0, inplace=True)
 

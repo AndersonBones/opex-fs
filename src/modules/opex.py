@@ -138,11 +138,6 @@ class Opex:
 
         self.df.to_excel(writer, header=True, sheet_name='Opex', index=False)
 
-
-        accounts = Accounts(self.df)
-        account_relatory = accounts.get_despesas_category()
-        account_relatory.to_excel(writer, header=True, sheet_name='Relatório', index=False)
-
         auto_adjust_column(self.df, writer)
        
 
@@ -172,3 +167,21 @@ class Opex:
         self.set_ytd()
 
         self.save_file()
+
+
+        accounts = Accounts(self.df)
+        df_category = accounts.get_despesas_category()
+        path = r"C:\Users\Anderson\Desktop\OPEX\opex-fs\src\data\budget.xlsx"
+        
+
+        try:
+            with pd.ExcelWriter(path, engine='openpyxl', mode='a') as writer:
+                # Write the new DataFrame to a new sheet
+                df_category.to_excel(writer, sheet_name='Relatorio', index=False)
+        except PermissionError:
+            print(f"Error: Permission denied. Please make sure you have write access to the file '{path}'.")
+            exit()
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+            exit()
+       
