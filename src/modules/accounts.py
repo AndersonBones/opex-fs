@@ -1,6 +1,6 @@
 import re
 import numpy as np
-
+import pandas as pd
 
 class Accounts:
     def __init__(self, df) -> None:
@@ -37,68 +37,61 @@ class Accounts:
         return centro_custo
 
 
-    def despesas_category(self):
-
-        # account category
-        despesas_category = {
-            "Manutenção":[
-                    "40120101 Manutenção das instalações",
-                    "40120102 Manutenção de veículos",
-                    "40120103 Manutenção de máquinas e equipamentos"
-                ],
-
-            "Aluguéis e locações":[
-                "40120201 Aluguel de veículos"
-            ],
-
-            "Despesas de viagens":[
-                "40120401 Locomoção terrestre",
-                "40120402 Passagens aéreas",
-                "40120403 Despesa com hospedagem",
-                "40120404 Refeições - Despesa de viagem",
-
-            ],
-
-            "Água, energia e comunicação":[
-                "40120501 Energia elétrica",
-                "40120503 Serviço de telefonia móvel"
-            ],
-
-            "Despesas com serviços de terceiros":[
-                "40120601 Serviços de auditoria",
-                "40120602 Serviços de consultoria",
-                "40120605 Serviços de armazenagem",
-                "40120603 Serviços de assessoria jurídica",
-                "40120606 Serviços de industrialização Biomassa (picagem)",
-                "40120612 Serviços Prestados por Pessoa Jurídica",
-                "40120613 Serviços Manutenção e Assistência de Sistemas",
-                "40120614 Serviços Análises"
-            ],
-
-            "Despesas tributárias":[
-                "40120701 Licenciamento de veículos (IPVA e DPVAT)",
-                "40120705 Despesas cartorárias",
-                "40120706 Licenças e alvarás",
-                "40120707 Taxas diversas",
-                "40120801 Seguro de veículos",
-                "40120804 Outros seguros",
-                "40120901 Despesas com fretes"
-            ],
-
-            "Despesas gerais":[
-                "40121102 Material de escritório",
-                "40121104 Uniforme",
-                "40121107 Bens de pequeno valor",
-                "40121108 Propaganda e publicidade",
-                "40121110 Equipamentos de Proteção Individual",
-                "40121113 Multas Indedutíveis",
-                "40121119 Licencas de uso",
-                "40121120 Eventos e Confraternizações",
-                "40121122 Materiais de suprimentos de informatica"
-            ]
-        }
+    def get_despesas_category(self):
 
 
+        account_total = self.get_total_bgd_fct_by_account() # obtem a identificação e os valores do grupo de desepesas 
+
+        account_label = account_total['account_label'] # obtem a identificação do grupo de desepesas
+        index_list = []
+
+        for account in account_label:   
+            index_list.append(self.df.loc[self.df['Conta'] == account, 'Conta'].index[0]) # indices das linhas dos grupos de despesas
+        index_list = index_list[3:]
+
+
+        category = {"Despesa":[], "Conta":[], "Budget":[], "Forecast":[], "Fct x Bdg":[], "Percentual":[]}
+        df_category = pd.DataFrame(data=category)
+
+
+
+        despesas_category = []
+        budget_by_account = []
+        account_by_category = []
+        forecast_by_account = []
+
+        for index in range(0, len(index_list)-1):
+            # soma os valores entre os intervalos dos indices das linhas do grupo de despesa
+
+            for idx, acc in enumerate(self.df.iloc[index_list[index]-1:index_list[index+1]-2, 0].tolist()):
+                despesas_category.append(self.df.iloc[index_list[index]-2, 0])
+                account_by_category.append(acc)
+                budget_by_account.append(self.df.iloc[index_list[index]-1:index_list[index+1]-2, 1].tolist()[idx])
+                forecast_by_account.append(self.df.iloc[index_list[index]-1:index_list[index+1]-2, 2].tolist()[idx])
+
+        
+        df_category['Despesa'] = despesas_category
+        df_category['Conta'] = account_by_category
+        df_category['Budget'] = budget_by_account
+        df_category['Forecast'] = forecast_by_account
+        df_category.fillna(0, inplace=True)
+
+        df_category['Fct x Bdg'] = df_category['Budget'] - df_category['Forecast']
+        df_category['Percentual'] = (df_category['Forecast'] / df_category['Budget']) * 100 
+
+        df_category['Percentual'].replace([np.inf, -np.inf], 0, inplace=True)
+
+        df_category.style.format({
+            'Percentual': '{:,.2%}'.format,
+        })
+
+
+
+
+
+
+        return df_category
+    
 
     def get_total_bgd_fct_by_account(self):
         account_total_label_pattern = re.compile('^[A-Za-záàâãéèêíïóôõöúçñÁÀÂÃÉÈÍÏÓÔÕÖÚÇÑ]')

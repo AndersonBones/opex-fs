@@ -70,7 +70,7 @@ class Opex:
         self.df.insert(17, "Δ YTD", np.nan)
 
 
-    def set_delta_ytd_bugdet_subtotal(self): # configura o YTD do budget de cada conta 
+    def set_ytd_bugdet__by_account(self): # configura o YTD do budget de cada conta 
 
         ytd_budget = get_budget_dataframe() # obtem as contas da base Budget referente a cada conta
 
@@ -81,23 +81,30 @@ class Opex:
         
 
 
-    def set_delta_ytd_bugdet_total(self): #configura o YTD do budget de cada grupo de despesas 
+    def set_ytd_bugdet_despesa_group(self): #configura o YTD do budget de cada grupo de despesas 
         accounts = Accounts(self.df)
         account_total = accounts.get_total_bgd_fct_by_account() # obtem a identificação e os valores do grupo de desepesas 
 
         account_label = account_total['account_label'] # obtem a identificação do grupo de desepesas
         index_list = []
 
+        budget_total = 0
+
         for account in account_label:   
             index_list.append(self.df.loc[self.df['Conta'] == account, 'Conta'].index[0]) # indices das linhas dos grupos de despesas
 
         index_list = index_list[3:]
         for index in range(0, len(index_list)-1):
+            budget_total+=self.df.iloc[index_list[index]-2:index_list[index+1]-1, 15].sum()
+
             # soma os valores entre os intervalos dos indices das linhas do grupo de despesa
             self.df.iloc[index_list[index]-2, 15] = self.df.iloc[index_list[index]-2:index_list[index+1]-1, 15].sum()
 
-
+        budget_total+=self.df.iloc[index_list[-1]-2:, 15].sum()
         self.df.iloc[index_list[-1]-2, 15] = self.df.iloc[index_list[-1]-2:, 15].sum() #soma os valores entre os intervalos dos indices das linhas do ultimo grupo de despesa
+
+        return budget_total
+        
 
     # def set_delta_ytd_bugdet_total(self):
     #     account_label_pattern = re.compile('^[a-zA-Z]{5,90}')
@@ -112,12 +119,16 @@ class Opex:
         first_month_index_safra = 4
         current_month_index = datetime.date.today().month - first_month_index_safra
 
-        self.df['Δ YTD real'] = self.df.iloc[3:, 3:current_month_index+3].sum(skipna=True, axis=1) # refatorar urgentemente
+        self.df['Δ YTD real'] = self.df.iloc[2:, 3:current_month_index+3].sum(skipna=True, axis=1) # refatorar urgentemente
 
 
             
     def set_ytd(self):
-        self.df['Δ YTD'] = self.df['Δ YTD Budget'] - self.df['Δ YTD real']
+        self.df['Δ YTD'] = self.df['Δ YTD real'] - self.df['Δ YTD Budget'] 
+
+    
+    def set_budget_ytd(self, total_budget):
+        self.df.iloc[2, 15] = total_budget
 
 
     def save_file(self):
@@ -127,9 +138,10 @@ class Opex:
 
         self.df.to_excel(writer, header=True, sheet_name='Opex', index=False)
 
-        ytd_budget = get_budget_dataframe()
 
-        ytd_budget.to_excel(writer, header=True, sheet_name='Relatório', index=False)
+        accounts = Accounts(self.df)
+        account_relatory = accounts.get_despesas_category()
+        account_relatory.to_excel(writer, header=True, sheet_name='Relatório', index=False)
 
         auto_adjust_column(self.df, writer)
        
@@ -152,15 +164,11 @@ class Opex:
 
         self.insert_ytd_columns()
 
-        self.set_delta_ytd_bugdet_subtotal()
-        self.set_delta_ytd_bugdet_total()
+        self.set_ytd_bugdet__by_account()
+        total_budget = self.set_ytd_bugdet_despesa_group()
+        self.set_budget_ytd(total_budget)
 
         self.set_delta_ytd_fct()
-
-
-
         self.set_ytd()
-
-  
 
         self.save_file()

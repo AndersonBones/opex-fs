@@ -20,7 +20,7 @@ class Formatting:
 
         # grab the active worksheet
         self.ws = self.wb['Opex']
-        self.ws_relatorio = self.wb['Relatório']
+        
 
 
 
