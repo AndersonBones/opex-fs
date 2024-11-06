@@ -1,6 +1,10 @@
 from openpyxl import load_workbook
 from openpyxl.styles import numbers
 from openpyxl.styles import Border, Side, PatternFill, Font, GradientFill, Alignment, NamedStyle, alignment
+from openpyxl.styles.borders import BORDER_THIN
+from openpyxl.formatting.rule import IconSet, FormatObject
+from openpyxl.formatting.rule import Rule
+
 from openpyxl.chart import BarChart, Series, Reference
 
 import os
@@ -11,15 +15,27 @@ import datetime
 
 
 class Formatting:
-    def __init__(self, output) -> None:
-        self.output = output
+    def __init__(self, output_path_opex) -> None:
+        self.output_path_opex = output_path_opex
 
 
-        self.wb = load_workbook(output)
+        self.wb = load_workbook(self.output_path_opex)
         
 
         # grab the active worksheet
         self.ws = self.wb['Opex']
+
+        self.ws.sheet_view.showGridLines = False
+
+        self.colors = {
+            "yellow":"F7D21E",
+            "green":"1B7754",
+            "dark_green":"0E3A29",
+            "gray-500":"D9D9D9",
+            "gray-600":"D9D9D9",
+            "white":"ffffff",
+            "dark_gray":"3A3838"
+        }
         
 
 
@@ -27,8 +43,8 @@ class Formatting:
     def set_font(self): # set font style 
         for row in self.ws["A1:W100"]:
             for cell in row:
-                cell.font = Font(name='Calibri',
-                    size=10,
+                cell.font = Font(name='Montserrat',
+                    size=9,
                     bold=False,
                     italic=False,
                     vertAlign=None,
@@ -40,19 +56,30 @@ class Formatting:
 
 
     def number_format_style(self): # set number format 
+        FORMAT_NUMBER_COMMA_SEPARATED = '#,##0'
+        font_color = ''
+
         for row in self.ws["B4:T90"]:
             for cell in row:
-                cell.number_format  = numbers.FORMAT_NUMBER_COMMA_SEPARATED2
+                cell.number_format  = FORMAT_NUMBER_COMMA_SEPARATED
 
                 if (type(cell.value) == int or type(cell.value) == float) and cell.value < 0:
-                    cell.font = Font(name='Calibri', # set font style row
-                                    size=10,
-                                    bold=True,
-                                    italic=False,
-                                    vertAlign=None,
-                                    underline='none',
-                                    strike=False,
-                                    color='FF0101')
+                    font_color = 'FF0101'
+                   
+                else:
+                    font_color = '3A3838'
+                 
+
+
+                cell.font = Font(name='Montserrat', # set font style row
+                                size=9,
+                                bold=False,
+                                italic=False,
+                                vertAlign=None,
+                                underline='none',
+                                strike=False,
+                                color=font_color)
+                    
 
 
                 
@@ -73,35 +100,39 @@ class Formatting:
 
     def set_subtotais_style(self): # set subtotal style rows
         rows = self.get_subtotal_rows()
-        bg_color = "1A7753"
+        bg_color = self.colors['green']
+        font_color = self.colors['white']
 
         for cell_index in rows: # looping in rows
             for row in self.ws[f"A{cell_index}:T{cell_index}"]:
                 for index, cell in enumerate(row):
-                
+                    
                     if cell_index > 4:
-                        bg_color = '79AB2B'
+                        bg_color = self.colors['gray-600']
+                        font_color = self.colors['dark_gray']
                     else:
-                        bg_color = '1A7753'
-
+                        bg_color = self.colors['green']
+                        font_color = self.colors['white']
+                        
                     cell.fill = PatternFill("solid", fgColor=bg_color) # set background row
                                         
-                    cell.font = Font(name='Calibri', # set font style row
-                                    size=10,
-                                    bold=True,
-                                    italic=False,
-                                    vertAlign=None,
-                                    underline='none',
-                                    strike=False,
-                                    color='ffffff')
+                    cell.font = Font(name='Montserrat', # set font style row
+                                size=9,
+                                bold=True,
+                                italic=False,
+                                vertAlign=None,
+                                underline='none',
+                                strike=False,
+                                color=font_color)
     
+
 
     def set_header_style(self):
         for cell in self.ws['A1:T1'][0]:
-            cell.fill = PatternFill("solid", fgColor="1A7753") # set background row
+            cell.fill = PatternFill("solid", fgColor="0E3A29") # set background row
 
-            cell.font = Font(name='Calibri', # set font style row
-                                    size=10,
+            cell.font = Font(name='Montserrat', # set font style row
+                                    size=9,
                                     bold=True,
                                     italic=False,
                                     vertAlign=None,
@@ -109,14 +140,13 @@ class Formatting:
                                     strike=False,
                                     color='ffffff')
             cell.alignment = alignment.Alignment(horizontal="center", vertical="center")
-
             cell.border = None
 
         for cell in self.ws["D2:O2"][0]:
-            cell.fill = PatternFill("solid", fgColor="1A7753") # set background row
+            cell.fill = PatternFill("solid", fgColor="0E3A29") # set background row
 
-            cell.font = Font(name='Calibri', # set font style row
-                                    size=10,
+            cell.font = Font(name='Montserrat', # set font style row
+                                    size=9,
                                     bold=True,
                                     italic=False,
                                     vertAlign=None,
@@ -164,6 +194,8 @@ class Formatting:
         # merge Forecast and Budget cells
         if self.ws["B1"].value == "Budget" and self.ws["C1"].value == "Forecast":
             self.ws.merge_cells("B1:B2")
+
+
             self.ws.merge_cells("C1:C2")
         
 
@@ -184,6 +216,8 @@ class Formatting:
                 self.ws["D1:O2"][0][index].value = "Forecast"
             else:
                 self.ws["D1:O2"][0][index].value = "Realizado"
+            
+
 
         
         # merge styling
@@ -194,26 +228,44 @@ class Formatting:
         for index, cell in enumerate(self.ws["D1:O1"][0]): 
             if cell.value == "Forecast":
                 forecast_cells_coordinate.append(cell)
-
+      
             if cell.value == "Realizado":
                 realizado_cells_coordinate.append(cell)
-    
 
         # merge Forecast cells and Realizado cells
         self.ws.merge_cells(f"{forecast_cells_coordinate[0].coordinate}:{forecast_cells_coordinate[-1].coordinate}")
         self.ws.merge_cells(f"{realizado_cells_coordinate[0].coordinate}:{realizado_cells_coordinate[-1].coordinate}")
 
+        
+    def set_icons(self):
 
+        first = FormatObject(type='num', val=-99999)
+        second = FormatObject(type='num', val=99999)
+
+        ytd_iconset = IconSet(iconSet='3Symbols', cfvo=[first, second], showValue=None, percent=None, reverse=True)
+        ytd_rule = Rule(type='iconSet', iconSet=ytd_iconset)
+
+        self.ws.conditional_formatting.add("R4:R60", ytd_rule)
+
+
+        bdg_fct_iconset = IconSet(iconSet='3Arrows', cfvo=[first, second], showValue=None, percent=None, reverse=None)
+        bdg_fct_rule = Rule(type='iconSet', iconSet=bdg_fct_iconset)
+
+        self.ws.conditional_formatting.add("S4:S60", bdg_fct_rule)
+
+        
+        
 
 
     def save(self):
-        self.wb.save(filename="Opex.xlsx")
+        self.wb.save(filename=self.output_path_opex)
 
         # os.popen("Opex.xlsx")
 
     def run(self):
         self.set_font()
-    
+
+        # set formats
         self.insert_empty_row()
         self.set_safra_header()
         self.merge_cells_header()
@@ -222,7 +274,10 @@ class Formatting:
 
         #style
         self.set_header_style()
-        self.set_subtotais_style()
         self.number_format_style()
+        self.set_subtotais_style()
 
-        self.save()
+        self.set_icons()
+        
+        # save file
+        self.save() 
