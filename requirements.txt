@@ -1,0 +1,5 @@
+customtkinter
+numpy
+pandas
+openpyxl
+IPython.display
